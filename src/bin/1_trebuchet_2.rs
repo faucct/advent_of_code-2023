@@ -4,22 +4,30 @@ fn sum(reader: impl std::io::BufRead) -> usize {
     let words = [
         "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
     ];
-    let first_regex = Regex::new(&"(?:(0)"
-        .chars()
-        .chain(words.iter().enumerate().flat_map(|(i, &word)| {
-            ['|', '(', ('1' as u8 + i as u8) as char, '|'].into_iter()
-            .chain(word.chars())
-            .chain(")".chars())
-        }))
-        .chain(")".chars()).collect::<String>()).unwrap();
-    let last_regex = Regex::new(&"(?:(0)"
-        .chars()
-        .chain(words.iter().enumerate().flat_map(|(i, &word)| {
-            ['|', '(', ('1' as u8 + i as u8) as char, '|'].into_iter()
-            .chain(word.chars().rev())
-            .chain(")".chars())
-        }))
-        .chain(")".chars()).collect::<String>()).unwrap();
+    let first_regex = Regex::new(
+        &"(0)"
+            .chars()
+            .chain(words.iter().enumerate().flat_map(|(i, &word)| {
+                ['|', '(', ('1' as u8 + i as u8) as char, '|']
+                    .into_iter()
+                    .chain(word.chars())
+                    .chain(")".chars())
+            }))
+            .collect::<String>(),
+    )
+    .unwrap();
+    let last_regex = Regex::new(
+        &"(0)"
+            .chars()
+            .chain(words.iter().enumerate().flat_map(|(i, &word)| {
+                ['|', '(', ('1' as u8 + i as u8) as char, '|']
+                    .into_iter()
+                    .chain(word.chars().rev())
+                    .chain(")".chars())
+            }))
+            .collect::<String>(),
+    )
+    .unwrap();
     let mut sum = 0;
     for line in reader.lines() {
         let line = line.unwrap();
