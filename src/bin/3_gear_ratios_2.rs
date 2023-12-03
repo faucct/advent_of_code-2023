@@ -1,21 +1,19 @@
 fn find_number(line: &String, mut j: usize) -> u32 {
-    if let Some(c) = line.chars().nth(j) {
-        if c.is_digit(10) {
-            while j > 0 && line.chars().nth(j - 1).unwrap().is_digit(10) {
-                j -= 1;
-            }
-            let mut number = 0;
-            while let Some(c) = line.chars().nth(j) {
-                if let Some(digit) = c.to_digit(10) {
-                    number *= 10;
-                    number += digit;
-                    j += 1;
-                } else {
-                    break;
-                }
-            }
-            return number;
+    if (*line.as_bytes().get(j).unwrap() as char).is_digit(10) {
+        while j > 0 && (*line.as_bytes().get(j - 1).unwrap() as char).is_digit(10) {
+            j -= 1;
         }
+        let mut number = 0;
+        while let Some(c) = line.as_bytes().get(j) {
+            if let Some(digit) = (*c as char).to_digit(10) {
+                number *= 10;
+                number += digit;
+                j += 1;
+            } else {
+                break;
+            }
+        }
+        return number;
     }
     0
 }
@@ -32,7 +30,7 @@ fn sum(reader: impl std::io::BufRead) -> u32 {
             let mut product = 1;
             for i in i.saturating_sub(1)..(i + 2).min(lines.len()) {
                 let line = &lines[i];
-                if line.chars().nth(j).unwrap().is_digit(10) {
+                if (*line.as_bytes().get(j).unwrap() as char).is_digit(10) {
                     let number = find_number(line, j);
                     if number != 0 {
                         count += 1;

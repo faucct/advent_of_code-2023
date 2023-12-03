@@ -11,7 +11,7 @@ fn sum(reader: impl std::io::BufRead) -> u32 {
                 for i in i.saturating_sub(1)..(i + 2).min(lines.len()) {
                     let line = &lines[i];
                     for j in j.saturating_sub(1)..(j + 2).min(line.len()) {
-                        let c = line.chars().nth(j).unwrap();
+                        let c = *line.as_bytes().get(j).unwrap() as char;
                         if !c.is_digit(10) && c != '.' {
                             adjacent = true;
                         }
