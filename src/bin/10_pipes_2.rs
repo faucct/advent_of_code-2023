@@ -45,7 +45,7 @@ impl Direction {
         })
     }
 
-    fn angle(&self, direction: Direction) -> i8 {
+    fn clockwise(&self, direction: Direction) -> i8 {
         match self {
             Direction::Up => match direction {
                 Direction::Left => -1,
@@ -87,7 +87,11 @@ fn sum(reader: impl std::io::BufRead) -> usize {
         })
         .next()
         .unwrap();
-    fn fill(map: &mut Vec<Vec<u8>>, cycle: &std::collections::HashSet<(usize, usize)>, position: (usize, usize)) -> usize {
+    fn fill(
+        map: &mut Vec<Vec<u8>>,
+        cycle: &std::collections::HashSet<(usize, usize)>,
+        position: (usize, usize),
+    ) -> usize {
         if cycle.contains(&position) {
             return 0;
         }
@@ -97,20 +101,36 @@ fn sum(reader: impl std::io::BufRead) -> usize {
             .and_then(|row| row.get_mut(position.1))
         {
             if *tile != '0' as u8 && *tile != 'I' as u8 {
-                if *tile == '.' as u8 {
-                    *tile = 'I' as u8;
+                *tile = if *tile == '.' as u8 {
                     filled += 1;
+                    'I' as u8
                 } else {
-                    *tile = '0' as u8;
-                }
+                    '0' as u8
+                };
                 filled += fill(map, cycle, (position.0, position.1.wrapping_add(1)));
                 filled += fill(map, cycle, (position.0, position.1.wrapping_sub(1)));
                 filled += fill(map, cycle, (position.0.wrapping_add(1), position.1));
-                filled += fill(map, cycle, (position.0.wrapping_add(1), position.1.wrapping_add(1)));
-                filled += fill(map, cycle, (position.0.wrapping_add(1), position.1.wrapping_sub(1)));
+                filled += fill(
+                    map,
+                    cycle,
+                    (position.0.wrapping_add(1), position.1.wrapping_add(1)),
+                );
+                filled += fill(
+                    map,
+                    cycle,
+                    (position.0.wrapping_add(1), position.1.wrapping_sub(1)),
+                );
                 filled += fill(map, cycle, (position.0.wrapping_sub(1), position.1));
-                filled += fill(map, cycle, (position.0.wrapping_sub(1), position.1.wrapping_add(1)));
-                filled += fill(map, cycle, (position.0.wrapping_sub(1), position.1.wrapping_sub(1)));
+                filled += fill(
+                    map,
+                    cycle,
+                    (position.0.wrapping_sub(1), position.1.wrapping_add(1)),
+                );
+                filled += fill(
+                    map,
+                    cycle,
+                    (position.0.wrapping_sub(1), position.1.wrapping_sub(1)),
+                );
             }
         }
         filled
@@ -123,7 +143,7 @@ fn sum(reader: impl std::io::BufRead) -> usize {
     ] {
         let mut prev_direction = start_direction;
         let mut position = start_direction.step(start);
-        let mut angle = 0;
+        let mut clockwise = 0;
         let mut cycle = std::collections::HashSet::new();
         let mut filled = 0;
         loop {
@@ -141,19 +161,179 @@ fn sum(reader: impl std::io::BufRead) -> usize {
                             .and_then(|row| row.get_mut(position.1))
                         {
                             let tile = *tile as char;
-                            filled += if angle > 0 {
+                            let direction = if tile == 'S' {
+                                start_direction
+                            } else {
+                                prev_direction.next(tile).unwrap()
+                            };
+                            if prev_direction.clockwise(direction) * clockwise < 0 {
+                                filled += match (prev_direction, direction) {
+                                    (Direction::Up, Direction::Left)
+                                    | (Direction::Left, Direction::Up) => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0.wrapping_add(1), position.1.wrapping_add(1)),
+                                    ),
+                                    (Direction::Up, Direction::Right)
+                                    | (Direction::Right, Direction::Up) => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0.wrapping_add(1), position.1.wrapping_sub(1)),
+                                    ),
+                                    (Direction::Down, Direction::Left)
+                                    | (Direction::Left, Direction::Down) => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0.wrapping_sub(1), position.1.wrapping_add(1)),
+                                    ),
+                                    (Direction::Down, Direction::Right)
+                                    | (Direction::Right, Direction::Down) => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0.wrapping_sub(1), position.1.wrapping_sub(1)),
+                                    ),
+                                    _ => 0,
+                                };
+                                filled += if clockwise > 0 {
+                                    match direction {
+                                        Direction::Up => fill(
+                                            &mut map,
+                                            &cycle,
+                                            (position.0, position.1.wrapping_add(1)),
+                                        ),
+                                        Direction::Down => fill(
+                                            &mut map,
+                                            &cycle,
+                                            (position.0, position.1.wrapping_sub(1)),
+                                        ),
+                                        Direction::Left => fill(
+                                            &mut map,
+                                            &cycle,
+                                            (position.0.wrapping_sub(1), position.1),
+                                        ),
+                                        Direction::Right => fill(
+                                            &mut map,
+                                            &cycle,
+                                            (position.0.wrapping_add(1), position.1),
+                                        ),
+                                    }
+                                } else {
+                                    match prev_direction {
+                                        Direction::Down => fill(
+                                            &mut map,
+                                            &cycle,
+                                            (position.0, position.1.wrapping_add(1)),
+                                        ),
+                                        Direction::Up => fill(
+                                            &mut map,
+                                            &cycle,
+                                            (position.0, position.1.wrapping_sub(1)),
+                                        ),
+                                        Direction::Right => fill(
+                                            &mut map,
+                                            &cycle,
+                                            (position.0.wrapping_sub(1), position.1),
+                                        ),
+                                        Direction::Left => fill(
+                                            &mut map,
+                                            &cycle,
+                                            (position.0.wrapping_add(1), position.1),
+                                        ),
+                                    }
+                                };
+                            }
+                            filled += if clockwise > 0 {
                                 match prev_direction {
-                                    Direction::Up => fill(&mut map, &cycle, (position.0, position.1.wrapping_add(1))),
-                                    Direction::Down => fill(&mut map, &cycle, (position.0, position.1.wrapping_sub(1))),
-                                    Direction::Left => fill(&mut map, &cycle, (position.0.wrapping_sub(1), position.1)),
-                                    Direction::Right => fill(&mut map, &cycle, (position.0.wrapping_add(1), position.1)),
+                                    Direction::Up => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0, position.1.wrapping_add(1)),
+                                    ),
+                                    Direction::Down => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0, position.1.wrapping_sub(1)),
+                                    ),
+                                    Direction::Left => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0.wrapping_sub(1), position.1),
+                                    ),
+                                    Direction::Right => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0.wrapping_add(1), position.1),
+                                    ),
                                 }
                             } else {
                                 match prev_direction {
-                                    Direction::Down => fill(&mut map, &cycle, (position.0, position.1.wrapping_add(1))),
-                                    Direction::Up => fill(&mut map, &cycle, (position.0, position.1.wrapping_sub(1))),
-                                    Direction::Right => fill(&mut map, &cycle, (position.0.wrapping_sub(1), position.1)),
-                                    Direction::Left => fill(&mut map, &cycle, (position.0.wrapping_add(1), position.1)),
+                                    Direction::Down => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0, position.1.wrapping_add(1)),
+                                    ),
+                                    Direction::Up => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0, position.1.wrapping_sub(1)),
+                                    ),
+                                    Direction::Right => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0.wrapping_sub(1), position.1),
+                                    ),
+                                    Direction::Left => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0.wrapping_add(1), position.1),
+                                    ),
+                                }
+                            };
+                            filled += if clockwise > 0 {
+                                match direction {
+                                    Direction::Up => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0, position.1.wrapping_add(1)),
+                                    ),
+                                    Direction::Down => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0, position.1.wrapping_sub(1)),
+                                    ),
+                                    Direction::Left => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0.wrapping_sub(1), position.1),
+                                    ),
+                                    Direction::Right => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0.wrapping_add(1), position.1),
+                                    ),
+                                }
+                            } else {
+                                match direction {
+                                    Direction::Down => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0, position.1.wrapping_add(1)),
+                                    ),
+                                    Direction::Up => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0, position.1.wrapping_sub(1)),
+                                    ),
+                                    Direction::Right => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0.wrapping_sub(1), position.1),
+                                    ),
+                                    Direction::Left => fill(
+                                        &mut map,
+                                        &cycle,
+                                        (position.0.wrapping_add(1), position.1),
+                                    ),
                                 }
                             };
                             if tile == 'S' {
@@ -162,13 +342,12 @@ fn sum(reader: impl std::io::BufRead) -> usize {
                                 }
                                 return filled;
                             }
-                            let direction = prev_direction.next(tile).unwrap();
                             prev_direction = direction;
                             position = direction.step(position);
                         }
                     }
                 } else if let Some(direction) = prev_direction.next(*tile as char) {
-                    angle += prev_direction.angle(direction);
+                    clockwise += prev_direction.clockwise(direction);
                     prev_direction = direction;
                     position = direction.step(position);
                 } else {
