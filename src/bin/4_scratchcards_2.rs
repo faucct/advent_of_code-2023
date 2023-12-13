@@ -17,7 +17,7 @@ fn sum(reader: impl std::io::BufRead) -> u32 {
             .filter(|number| !number.is_empty())
             .map(|number| number.parse().unwrap())
             .collect::<HashSet<u32>>();
-        let front = (copies.pop_front().unwrap_or(0) + 1);
+        let front = copies.pop_front().unwrap_or(0) + 1;
         let yours = yours
             .split(" ")
             .filter(|number| !number.is_empty())

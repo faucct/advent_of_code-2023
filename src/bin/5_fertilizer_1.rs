@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 fn lowest_location(mut reader: impl std::io::BufRead) -> u64 {
     let mut line = String::new();
     reader.read_line(&mut line).unwrap();
