@@ -1,7 +1,6 @@
 fn sum(reader: impl std::io::BufRead) -> usize {
-    let mut boxes = (0..256)
-        .map(|_| (std::collections::HashMap::new(), Vec::new()))
-        .collect::<Vec<_>>();
+    let mut boxes: [(std::collections::HashMap<String, usize>, Vec<usize>); 256] =
+        std::array::from_fn(|_| Default::default());
     for line in reader.lines() {
         let line = line.unwrap();
         for step in line.split(",") {
