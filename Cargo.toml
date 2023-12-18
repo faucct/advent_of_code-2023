@@ -1,3 +1,5 @@
+cargo-features = ["test-dummy-unstable"]
+
 [package]
 name = "aoc-2023"
 version = "0.1.0"
